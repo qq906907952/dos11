@@ -17,9 +17,9 @@
     
     csa(channel switch announcement) 信道切换攻击
     
-    fake_auth 假认证攻击 
+    fake_auth 假认证攻击    
     
-    delba(delete block ack) ???-???-??? ミク表示这个攻击不明觉厉哦~~
+  
     
 
 ## example
