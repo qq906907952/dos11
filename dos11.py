@@ -31,7 +31,8 @@ parser.add_argument('--client-mac', dest="client_mac", type=str, nargs="?",
 
 parser.add_argument('--rate', dest="rate", nargs="+", type=int,
                     help='beacon support rate tag,in decimal. default [0x82,]')
-
+parser.add_argument('--cap', dest="cap", nargs="?", type=int,
+                    help='beacon cap ,in decimal. default 1<<8')
 parser.add_argument('--switch-channel', dest="channel", nargs="?", type=int,
                     help='channel switch announcement need this flag,represent which cahnnel to switch')
 
@@ -65,6 +66,9 @@ if not ssid:
 if not support_rates:
     # support_rates = [0x82,0x84,0x8b,0x96,0x24,0x30,0x48,0x6c]
     support_rates = [0x82,]
+cap=args.cap
+if not cap:
+    cap=1<<8
 
 # deauth
 reason = args.reason
@@ -78,7 +82,7 @@ if not auth_algorithm:
 
 def beacon_frame():
     return RadioTap() / Dot11(addr1=cli_mac, addr2=ap_mac, addr3=ap_mac, addr4=ap_mac) / \
-           Dot11Beacon(cap=0) / \
+           Dot11Beacon(cap=cap) / \
            Dot11Elt(ID=tag_num_ssid, len=len(ssid), info=bytes(ssid, 'utf-8')) / Dot11EltRates(rates=support_rates)
 
 
