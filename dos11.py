@@ -32,7 +32,7 @@ parser.add_argument('--client-mac', dest="client_mac", type=str, nargs="?",
 parser.add_argument('--rate', dest="rate", nargs="+", type=int,
                     help='beacon support rate tag,in decimal. default [0x82,]')
 parser.add_argument('--cap', dest="cap", nargs="?", type=int,
-                    help='beacon cap ,in decimal. default 1<<8')
+                    help='beacon cap ,in decimal. default 1')
 parser.add_argument('--switch-channel', dest="channel", nargs="?", type=int,
                     help='channel switch announcement need this flag,represent which cahnnel to switch')
 
@@ -68,7 +68,7 @@ if not support_rates:
     support_rates = [0x82,]
 cap=args.cap
 if not cap:
-    cap=1<<8
+    cap=1
 
 # deauth
 reason = args.reason
